@@ -1,6 +1,6 @@
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
-import scrapy
+from ..items import BooksItem
 
 class BookCrawlerSpider(CrawlSpider):
     name = 'BookCrawler'
@@ -28,17 +28,18 @@ class BookCrawlerSpider(CrawlSpider):
            price_without_tax = response.css('table[class*=table-striped] tr:nth-child(4) td::text').get()
            tax = response.css('table[class*=table-striped] tr:nth-child(5) td::text').get()
         
-           yield {
-            'Book Title' : title,
-            'Book Price' : price,
-            'Image Url' : image_url,
-            'Stock' : stock,
-            'Rating' : rating,
-            'Description' : description,
-            'UCP' : UCP,
-            'Price_With_Tax' : price_inc_tax,
-            'Price_Without_Tax' : price_without_tax,
-            'Tax' : tax
-             }
+           book = BooksItem(
+            title = title,
+            price = price,
+            image_url = image_url,
+            stock = stock,
+            rating = rating,
+            description = description,
+            UCP = UCP,
+            price_with_tax = price_inc_tax,
+            price_without_tax = price_without_tax,
+            tax = tax
+           )
+           yield book
         else:
             print(response.url)
