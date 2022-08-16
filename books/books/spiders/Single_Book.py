@@ -4,7 +4,7 @@ import scrapy
 class Single_BookSpider(scrapy.Spider):
     name = "SingleBook"
     allowed_domains = ['books.toscrape.com']
-    base_url = 'http://books.toscrape.com'
+    base_url = 'http://books.toscrape.com/'
 
     def start_requests(self):
         yield scrapy.Request('http://books.toscrape.com/', callback=self.parse)
@@ -14,14 +14,27 @@ class Single_BookSpider(scrapy.Spider):
         books = response.css('article')
 
         for book in books:
-            book_url = self.start_requests().__next__().url + book.css('div[class*=image_container] a::attr(href)').get()
+            book_url = book.css('div[class*=image_container] a::attr(href)').get()
+
+            if 'catalogue/' not in book_url:
+                book_url = 'catalogue/' + book_url
+
+            book_url = self.start_requests().__next__().url + book_url
 
             yield scrapy.Request(book_url, callback=self.parse_book)
+
+        next_page_url = response.css('li.next a::attr(href)').get()
+        
+        if 'catalogue/' not in next_page_url:
+            next_page_url = 'catalogue/' + next_page_url
+
+        next_page_url = self.base_url + next_page_url
+        yield scrapy.Request(next_page_url, callback=self.parse)
 
     def parse_book(self, response):
         title = response.css('article div h1::text').get()
         price = response.css('article div[class*=product_main] p[class*=price_color]::text').get()
-        image_url = self.base_url + response.css('div[class*=item] img::attr(src)').get().replace('../..','')
+        image_url = self.base_url + response.css('div[class*=item] img::attr(src)').get().replace('../../','')
         stock = response.css('div[class*=product_main] p[class*=instock]::text').getall()[1].strip()
         rating = response.css('div[class*=product_main] p[class*=star]::attr(class)').get().replace('star-rating', '')
         description = response.css('#product_description + p::text').get()
@@ -29,7 +42,7 @@ class Single_BookSpider(scrapy.Spider):
         price_inc_tax = response.css('table[class*=table-striped] tr:nth-child(3) td::text').get()
         price_without_tax = response.css('table[class*=table-striped] tr:nth-child(4) td::text').get()
         tax = response.css('table[class*=table-striped] tr:nth-child(5) td::text').get()
-
+        
         yield {
             'Book Title' : title,
             'Book Price' : price,
