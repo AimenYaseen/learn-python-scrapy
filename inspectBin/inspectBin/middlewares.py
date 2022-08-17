@@ -3,7 +3,9 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import logging
 from scrapy import signals
+import random
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -101,3 +103,29 @@ class InspectbinDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+# Rewrite Proxy Middleware
+class ProxyDownloaderMiddleware:
+    logger = logging.getLogger(__name__)
+
+    def process_request(self, request, spider):
+        self.logger.debug('using Proxy')
+
+        request.meta['proxy'] = 'http://120.79.62.89:3128'
+        return None
+
+# Random User Agents
+class RandomUserAgentDownloaderMiddleware:
+    def __init__(self):
+        self.user_agents = [
+            'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)' ,
+             'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2' ,
+             'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:15.0) Gecko/20100101 Firefox/15.0.1'
+        ]
+        self.logger = logging.getLogger(__name__)
+
+    def process_request(self, request, spider):
+        agent = random.choice(self.user_agents)
+        self.logger.debug(f"Sending Request using {agent}")
+        request.headers.setdefault(b'User-Agent', agent)
+        
